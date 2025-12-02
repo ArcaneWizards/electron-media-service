@@ -38,12 +38,19 @@
 @end
 
 // static Persistent<Function> persistentCallback;
-static Nan::Callback persistentCallback;
+static Nan::Callback* persistentCallback = nullptr;
 NAN_METHOD(DarwinMediaService::Hook) {
   Nan::ObjectWrap::Unwrap<DarwinMediaService>(info.This());
 
   v8::Local<v8::Function> function = v8::Local<v8::Function>::Cast(info[0]);
-  persistentCallback.SetFunction(function);
+  
+  // Clean up existing callback
+  if (persistentCallback) {
+    delete persistentCallback;
+  }
+  
+  // Create new callback
+  persistentCallback = new Nan::Callback(function);
 }
 
 void DarwinMediaService::Emit(std::string eventName) {
@@ -54,12 +61,17 @@ void DarwinMediaService::Emit(std::string eventName) {
 void DarwinMediaService::EmitWithInt(std::string eventName, int details) {
   Nan::HandleScope scope;
   
+  // Check if callback exists
+  if (!persistentCallback) {
+    return;
+  }
+  
   v8::Local<v8::Value> argv[2] = {
     Nan::New<v8::String>(eventName).ToLocalChecked(),
     Nan::New<v8::Integer>(details)
   };
 
-  Nan::Call(persistentCallback, 2, argv);
+  Nan::Call(*persistentCallback, 2, argv);
 }
 
 NAN_METHOD(DarwinMediaService::New) {
@@ -98,6 +110,21 @@ NAN_METHOD(DarwinMediaService::StopService) {
   [remoteCommandCenter pauseCommand].enabled = false;
   [remoteCommandCenter togglePlayPauseCommand].enabled = false;
   [remoteCommandCenter changePlaybackPositionCommand].enabled = false;
+  [remoteCommandCenter nextTrackCommand].enabled = false;
+  [remoteCommandCenter previousTrackCommand].enabled = false;
+  
+  [[remoteCommandCenter playCommand] removeTarget:nil];
+  [[remoteCommandCenter pauseCommand] removeTarget:nil];
+  [[remoteCommandCenter togglePlayPauseCommand] removeTarget:nil];
+  [[remoteCommandCenter changePlaybackPositionCommand] removeTarget:nil];
+  [[remoteCommandCenter nextTrackCommand] removeTarget:nil];
+  [[remoteCommandCenter previousTrackCommand] removeTarget:nil];
+  
+  // Clean up callback to prevent shutdown crash
+  if (persistentCallback) {
+    delete persistentCallback;
+    persistentCallback = nullptr;
+  }
 }
 
 NAN_METHOD(DarwinMediaService::SetMetaData) {
