@@ -9,17 +9,29 @@
   _service = service;
 }
 
-- (void)remotePlay { _service->Emit("play"); }
-- (void)remotePause { _service->Emit("pause"); }
-- (void)remoteTogglePlayPause { _service->Emit("playPause"); }
-- (void)remoteNext { _service->Emit("next"); }
-- (void)remotePrev { _service->Emit("previous"); }
-
-- (void)remoteChangePlaybackPosition:(MPChangePlaybackPositionCommandEvent*)event {
-  _service->EmitWithInt("seek", event.positionTime);
+- (MPRemoteCommandHandlerStatus)remotePlay:(MPRemoteCommandEvent*)event {
+  _service->Emit("play");
+  return MPRemoteCommandHandlerStatusSuccess;
+}
+- (MPRemoteCommandHandlerStatus)remotePause:(MPRemoteCommandEvent*)event {
+  _service->Emit("pause");
+  return MPRemoteCommandHandlerStatusSuccess;
+}
+- (MPRemoteCommandHandlerStatus)remoteTogglePlayPause:(MPRemoteCommandEvent*)event {
+  _service->Emit("playPause");
+  return MPRemoteCommandHandlerStatusSuccess;
+}
+- (MPRemoteCommandHandlerStatus)remoteNext:(MPRemoteCommandEvent*)event {
+  _service->Emit("next");
+  return MPRemoteCommandHandlerStatusSuccess;
+}
+- (MPRemoteCommandHandlerStatus)remotePrev:(MPRemoteCommandEvent*)event {
+  _service->Emit("previous");
+  return MPRemoteCommandHandlerStatusSuccess;
 }
 
-- (MPRemoteCommandHandlerStatus)move:(MPChangePlaybackPositionCommandEvent*)event {
+- (MPRemoteCommandHandlerStatus)remoteChangePlaybackPosition:(MPChangePlaybackPositionCommandEvent*)event {
+  _service->EmitWithInt("seek", event.positionTime);
   return MPRemoteCommandHandlerStatusSuccess;
 }
 
@@ -67,12 +79,12 @@ NAN_METHOD(DarwinMediaService::StartService) {
   [remoteCommandCenter nextTrackCommand].enabled = true;
   [remoteCommandCenter previousTrackCommand].enabled = true;
 
-  [[remoteCommandCenter playCommand] addTarget:controller action:@selector(remotePlay)];
-  [[remoteCommandCenter pauseCommand] addTarget:controller action:@selector(remotePause)];
-  [[remoteCommandCenter togglePlayPauseCommand] addTarget:controller action:@selector(remoteTogglePlayPause)];
+  [[remoteCommandCenter playCommand] addTarget:controller action:@selector(remotePlay:)];
+  [[remoteCommandCenter pauseCommand] addTarget:controller action:@selector(remotePause:)];
+  [[remoteCommandCenter togglePlayPauseCommand] addTarget:controller action:@selector(remoteTogglePlayPause:)];
   [[remoteCommandCenter changePlaybackPositionCommand] addTarget:controller action:@selector(remoteChangePlaybackPosition:)];
-  [[remoteCommandCenter nextTrackCommand] addTarget:controller action:@selector(remoteNext)];
-  [[remoteCommandCenter previousTrackCommand] addTarget:controller action:@selector(remotePrev)];
+  [[remoteCommandCenter nextTrackCommand] addTarget:controller action:@selector(remoteNext:)];
+  [[remoteCommandCenter previousTrackCommand] addTarget:controller action:@selector(remotePrev:)];
 }
 
 NAN_METHOD(DarwinMediaService::StopService) {
