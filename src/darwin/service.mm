@@ -47,13 +47,16 @@ NAN_METHOD(DarwinMediaService::Hook) {
 }
 
 void DarwinMediaService::Emit(std::string eventName) {
+  Nan::HandleScope scope;
   EmitWithInt(eventName, 0);
 }
 
 void DarwinMediaService::EmitWithInt(std::string eventName, int details) {
+  Nan::HandleScope scope;
+  
   v8::Local<v8::Value> argv[2] = {
-    v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), eventName.c_str()).ToLocalChecked(),
-    v8::Integer::New(v8::Isolate::GetCurrent(), details)
+    Nan::New<v8::String>(eventName).ToLocalChecked(),
+    Nan::New<v8::Integer>(details)
   };
 
   Nan::Call(persistentCallback, 2, argv);
