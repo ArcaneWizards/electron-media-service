@@ -139,6 +139,7 @@ NAN_METHOD(DarwinMediaService::SetMetaData) {
   unsigned int songID = info[4]->Uint32Value(context).FromMaybe(0);
   unsigned int currentTime = info[5]->Uint32Value(context).FromMaybe(0);
   unsigned int duration = info[6]->Uint32Value(context).FromMaybe(0);
+  std::string artworkPath = info.Length() > 7 ? *Nan::Utf8String(info[7]) : "";
 
   NSMutableDictionary *songInfo = [[NSMutableDictionary alloc] init];
   [songInfo setObject:[NSString stringWithUTF8String:songTitle.c_str()] forKey:MPMediaItemPropertyTitle];
@@ -147,6 +148,34 @@ NAN_METHOD(DarwinMediaService::SetMetaData) {
   [songInfo setObject:[NSNumber numberWithFloat:currentTime] forKey:MPNowPlayingInfoPropertyElapsedPlaybackTime];
   [songInfo setObject:[NSNumber numberWithFloat:duration] forKey:MPMediaItemPropertyPlaybackDuration];
   [songInfo setObject:[NSNumber numberWithFloat:songID] forKey:MPMediaItemPropertyPersistentID];
+  
+  // Handle artwork if provided
+  if (!artworkPath.empty()) {
+    NSString *artworkPathNS = [NSString stringWithUTF8String:artworkPath.c_str()];
+    NSImage *artworkImage = nil;
+    
+    if ([artworkPathNS hasPrefix:@"data:image/"]) {
+      // Handle base64 data URLs
+      NSRange range = [artworkPathNS rangeOfString:@"base64,"];
+      if (range.location != NSNotFound) {
+        NSString *base64String = [artworkPathNS substringFromIndex:range.location + range.length];
+        NSData *imageData = [[NSData alloc] initWithBase64EncodedString:base64String options:0];
+        if (imageData) {
+          artworkImage = [[NSImage alloc] initWithData:imageData];
+        }
+      }
+    } else {
+      // Handle file paths
+      artworkImage = [[NSImage alloc] initWithContentsOfFile:artworkPathNS];
+    }
+    
+    if (artworkImage) {
+      MPMediaItemArtwork *artwork = [[MPMediaItemArtwork alloc] initWithBoundsSize:artworkImage.size requestHandler:^NSImage * _Nonnull(CGSize size) {
+        return artworkImage;
+      }];
+      [songInfo setObject:artwork forKey:MPMediaItemPropertyArtwork];
+    }
+  }
 
   if (songState == "playing") {
     [MPNowPlayingInfoCenter defaultCenter].playbackState = MPNowPlayingPlaybackStatePlaying;

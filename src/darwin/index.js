@@ -44,9 +44,10 @@ class MediaService extends EventEmitter {
     album,
     id,
     state,
+    albumArt,
   }) {
     this._requireStart();
-    this.service.setMetaData(title, artist, album, state, id, currentTime / 1000, duration / 1000);
+    this.service.setMetaData(title, artist, album, state, id, currentTime / 1000, duration / 1000, albumArt || '');
   }
 }
 
