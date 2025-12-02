@@ -1,10 +1,14 @@
 {
-  "name": "electron-media-service",
+  "name": "@arcanewizards/electron-media-service",
   "version": "0.3.0",
-  "description": "OS Media Service integration for Electron apps",
+  "private": false,
+  "description": "Fork of electron-media-service",
   "main": "src/index.js",
   "author": "Samuel Attard",
   "license": "MIT",
+  "repository": {
+    "url": "https://github.com/ArcaneWizards/electron-media-service"
+  },
   "devDependencies": {
     "chai": "^3.5.0",
     "electron-mocha": "^3.4.0",
